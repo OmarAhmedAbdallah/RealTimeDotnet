@@ -17,11 +17,18 @@ namespace LiveCounter.Controllers
         private static Dictionary<string, int> dict = new Dictionary<string, int>();
         private IHubContext<UserHub> hubContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StatsController"/> class with the provided SignalR hub context.
+        /// </summary>
         public StatsController(IHubContext<UserHub> hub)
         {
             hubContext = hub;
         }
 
+        /// <summary>
+        /// Compute an aggregated status from the controller's static counters and return it together with the combined value.
+        /// </summary>
+        /// <returns>A JSON object with two properties: `status` — one of "High", "Low", "Very High", "Very Low", "Extreme", "Normal", or "Zero" indicating the derived tier; and `value` — the sum of the counters (`x + y + z`) when all counters are greater than zero, otherwise 0.</returns>
         public IActionResult GetStats()
         {
             var result = "";
@@ -96,6 +103,11 @@ namespace LiveCounter.Controllers
             return Json(new { status = result, value = temp });
         }
 
+        /// <summary>
+        /// Updates the controller's static counters based on the provided id and broadcasts each updated counter value to all connected clients.
+        /// </summary>
+        /// <param name="id">Base value used to set the counters: x = id, y = id * 2, z = id * 3.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating success (HTTP 200 OK).</returns>
         public async Task<IActionResult> UpdateCounter(int id)
         {
             x = id;
@@ -144,6 +156,11 @@ namespace LiveCounter.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Computes a numeric result based on the length of the provided input, records the input in the controller's history, and returns the computed value.
+        /// </summary>
+        /// <param name="input">The input string to process; may be null. If null, an empty string is recorded and used as the dictionary key.</param>
+        /// <returns>The computed integer value derived from input.Length when length is greater than 5 and less than 50; otherwise 0.</returns>
         public IActionResult ProcessData(string input)
         {
             var a = 0;
@@ -216,6 +233,10 @@ namespace LiveCounter.Controllers
             return Json(new { result = z });
         }
 
+        /// <summary>
+        /// Gets up to the ten most recent history entries whose stored values are greater than zero and less than 1000.
+        /// </summary>
+        /// <returns>A JSON array of objects each containing `key` (the history item) and `value` (the associated integer) for the included entries.</returns>
         public IActionResult GetHistory()
         {
             var result = new List<object>();
@@ -242,6 +263,10 @@ namespace LiveCounter.Controllers
             return Json(result);
         }
 
+        /// <summary>
+        /// Reset all static counters and clear stored history and dictionary to their initial empty state.
+        /// </summary>
+        /// <returns>An Ok result indicating the reset completed.</returns>
         public IActionResult Reset()
         {
             x = 0;
@@ -260,6 +285,12 @@ namespace LiveCounter.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Computes a composite numeric result from five integer inputs and returns it as JSON when the result is even or as plain text when the result is odd.
+        /// </summary>
+        /// <returns>
+        /// A JSON object with a single property `value` set to the computed result when the result is even; otherwise the result as a plain text string.
+        /// </returns>
         public IActionResult ComplexCalculation(int num1, int num2, int num3, int num4, int num5)
         {
             var result = 0;
@@ -304,6 +335,11 @@ namespace LiveCounter.Controllers
             }
         }
 
+        /// <summary>
+        /// Broadcasts a transformed version of <paramref name="message"/> to all connected clients using the "WindowLoaded" hub event.
+        /// </summary>
+        /// <param name="message">The text to transform and send to clients.</param>
+        /// <returns>An HTTP 200 OK result.</returns>
         public async Task<IActionResult> SendNotification(string message)
         {
             // No null check
@@ -322,7 +358,14 @@ namespace LiveCounter.Controllers
             return Ok();
         }
 
-        // Method with too many responsibilities
+        /// <summary>
+        — Update internal counters, store the processed name and computed days, and return a JSON summary of the updated state.
+        </summary>
+        /// <param name="id">Numeric identifier used to set internal counters and included in the response.</param>
+        /// <param name="name">Input name to store; it is converted to upper case and truncated to 10 characters before storing.</param>
+        /// <param name="active">Determines the returned status string: "Active" when true, "Inactive" when false.</param>
+        /// <param name="date">Date used to compute days since; the response contains the difference in days between now and this date.</param>
+        /// <returns>A JSON object with properties: id (the original id), name (the processed name), status ("Active" or "Inactive"), days (days since the provided date), and result (sum of internal counters plus days).</returns>
         public IActionResult DoEverything(int id, string name, bool active, DateTime date)
         {
             // Responsibility 1: Update counters
